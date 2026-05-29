@@ -446,12 +446,26 @@ function exportHTML() {
     const ev = new Event('change');
     el.dispatchEvent(ev);
   });
-  const html = document.documentElement.outerHTML;
+
+  // 匯出前先切換回瀏覽模式，確保版面乾淨
+  const wasEdit = isEditMode;
+  if (wasEdit) setEditMode(false);
+
+  // 將目前的資料寫回 script 區塊中，取代掉舊的寫死資料
+  const dataScript = document.getElementById('app-data');
+  const newSchedule = JSON.stringify(scheduleData, null, 2).replace(/</g, '\\u003C');
+  const newGroup = JSON.stringify(groupData, null, 2).replace(/</g, '\\u003C');
+  dataScript.textContent = `\nlet scheduleData = ${newSchedule};\nlet groupData = ${newGroup};\n`;
+
+  const html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
   const blob = new Blob([html], { type: 'text/html' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'ski_trip.html';
   a.click();
+
+  // 如果原本是編輯模式，則恢復編輯狀態
+  if (wasEdit) setEditMode(true);
 }
 
 // ── Init ──────────────────────────────────────
