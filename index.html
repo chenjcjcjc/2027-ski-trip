@@ -20,7 +20,13 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; font-size: 14px; color: var(--text); background: var(--bg); padding: 32px 24px; }
 
-  .page-title { font-size: 20px; font-weight: 500; margin-bottom: 24px; }
+  .page-title { font-size: 20px; font-weight: 500; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; }
+
+  /* Lock badge */
+  .lock-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 12px; border-radius: 20px; cursor: pointer; user-select: none; transition: opacity .15s; }
+  .lock-badge:hover { opacity: .75; }
+  .lock-badge.locked { background: var(--surface2); color: var(--muted); border: 0.5px solid var(--border); }
+  .lock-badge.unlocked { background: var(--green-bg); color: var(--green-text); border: 0.5px solid #c0dd97; }
 
   /* Toolbar */
   .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
@@ -30,6 +36,7 @@
   .btn-primary:hover { opacity: 0.85; }
   .btn-danger { color: var(--red-text); border-color: var(--red-bg); }
   .btn-danger:hover { background: var(--red-bg); }
+  .btn:disabled { opacity: .35; cursor: not-allowed; }
 
   /* Card */
   .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
@@ -42,9 +49,10 @@
   tr:last-child td { border-bottom: none; }
 
   /* Editable cells */
-  .editable { border: none; background: transparent; color: var(--text); font-size: 14px; font-family: inherit; width: 100%; resize: none; outline: none; line-height: 1.6; min-height: 1.6em; cursor: text; }
-  .editable:focus { background: var(--blue-bg); border-radius: 4px; padding: 2px 4px; margin: -2px -4px; }
-  .cell-date input.editable { font-weight: 500; width: 48px; }
+  .editable { border: none; background: transparent; color: var(--text); font-size: 14px; font-family: inherit; width: 100%; resize: none; outline: none; line-height: 1.6; min-height: 1.6em; }
+  .editable[readonly], .editable:disabled { cursor: default; }
+  .edit-mode .editable:not([readonly]):not(:disabled) { cursor: text; }
+  .edit-mode .editable:not([readonly]):focus { background: var(--blue-bg); border-radius: 4px; padding: 2px 4px; margin: -2px -4px; }
   .cell-date .sub { font-size: 12px; color: var(--muted); }
 
   /* Badges */
@@ -56,18 +64,19 @@
   .badge-coral { background: var(--coral-bg); color: var(--coral-text); }
   .badge-amber { background: var(--amber-bg); color: var(--amber-text); }
   .badge input { border: none; background: transparent; color: inherit; font-size: 11px; font-weight: 500; font-family: inherit; outline: none; width: auto; min-width: 20px; }
-  .badge-del { cursor: pointer; opacity: 0.5; font-size: 13px; line-height: 1; }
+  .badge-del { cursor: pointer; opacity: 0.5; font-size: 13px; line-height: 1; display: none; }
+  .edit-mode .badge-del { display: inline; }
   .badge-del:hover { opacity: 1; }
-  .add-badge { font-size: 11px; color: var(--muted); cursor: pointer; padding: 2px 6px; border: 0.5px dashed var(--border); border-radius: 6px; }
+  .add-badge { font-size: 11px; color: var(--muted); cursor: pointer; padding: 2px 6px; border: 0.5px dashed var(--border); border-radius: 6px; display: none; }
+  .edit-mode .add-badge { display: inline; }
   .add-badge:hover { color: var(--text); border-color: var(--text); }
 
   /* Row controls */
   .row-actions { display: none; gap: 4px; }
-  tr:hover .row-actions { display: flex; }
+  .edit-mode tr:hover .row-actions { display: flex; }
   .row-btn { font-size: 11px; padding: 2px 8px; border-radius: 6px; border: 0.5px solid var(--border); background: var(--surface); cursor: pointer; color: var(--muted); white-space: nowrap; }
   .row-btn:hover { background: var(--surface2); color: var(--text); }
   .row-btn.del:hover { background: var(--red-bg); color: var(--red-text); border-color: var(--red-bg); }
-
   .actions-cell { width: 90px; text-align: right; }
 
   /* Member chips */
@@ -75,25 +84,35 @@
   .chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 3px 8px; border-radius: 20px; background: var(--surface2); border: 0.5px solid var(--border); color: var(--text); }
   .chip input { border: none; background: transparent; color: inherit; font-size: 12px; font-family: inherit; outline: none; min-width: 28px; width: auto; }
 
-  /* Modal */
+  /* Password modal */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
   .modal-overlay.open { display: flex; }
-  .modal { background: var(--surface); border-radius: 12px; border: 0.5px solid var(--border); padding: 24px; width: 360px; max-width: 90vw; }
-  .modal h3 { font-size: 15px; font-weight: 500; margin-bottom: 16px; }
-  .modal label { font-size: 12px; color: var(--label); display: block; margin-bottom: 4px; margin-top: 12px; }
-  .modal input, .modal select { width: 100%; font-size: 14px; padding: 7px 10px; border: 0.5px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-family: inherit; outline: none; }
-  .modal input:focus, .modal select:focus { border-color: var(--focus); }
-  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  .modal { background: var(--surface); border-radius: 12px; border: 0.5px solid var(--border); padding: 24px; width: 320px; max-width: 90vw; }
+  .modal h3 { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .modal label { font-size: 12px; color: var(--label); display: block; margin-bottom: 4px; }
+  .modal input { width: 100%; font-size: 14px; padding: 7px 10px; border: 0.5px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-family: inherit; outline: none; }
+  .modal input:focus { border-color: var(--focus); }
+  .error-msg { font-size: 12px; color: var(--red-text); margin-top: 8px; min-height: 16px; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
-  @media print { .toolbar, .row-actions, .add-badge, .badge-del, .actions-cell { display: none !important; } }
+  /* Badge modal */
+  .modal select { width: 100%; font-size: 14px; padding: 7px 10px; border: 0.5px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-family: inherit; outline: none; margin-top: 4px; }
+  .modal select:focus { border-color: var(--focus); }
+  .modal .field { margin-top: 12px; }
+
+  @media print { .toolbar, .row-actions, .add-badge, .badge-del, .actions-cell, .lock-badge { display: none !important; } }
 </style>
 </head>
 <body>
 
-<h1 class="page-title">🎿 苗場滑雪行程</h1>
+<h1 class="page-title">
+  🎿 苗場滑雪行程
+  <span class="lock-badge locked" id="lock-btn" onclick="handleLockClick()" title="點擊輸入密碼以啟用編輯">🔒 瀏覽模式</span>
+</h1>
 
 <div class="toolbar">
-  <button class="btn btn-primary" onclick="addRow()">＋ 新增一天</button>
+  <button class="btn btn-primary" id="add-row-btn" onclick="addRow()" disabled>＋ 新增一天</button>
   <button class="btn" onclick="window.print()">🖨 列印</button>
   <button class="btn" onclick="exportHTML()">⬇ 匯出 HTML</button>
 </div>
@@ -101,7 +120,7 @@
 <div class="card">
   <div class="card-header">
     行程總覽
-    <span style="font-weight:400; color: var(--muted)">點擊任意格子即可編輯</span>
+    <span id="edit-hint" style="font-weight:400; color: var(--muted)">🔒 請解鎖以編輯</span>
   </div>
   <table id="schedule-table">
     <thead>
@@ -121,7 +140,7 @@
 <div class="card">
   <div class="card-header">
     滑雪分組
-    <button class="btn" onclick="addGroup()" style="font-size:12px; padding:3px 10px;">＋ 新增組別</button>
+    <button class="btn" id="add-group-btn" onclick="addGroup()" disabled style="font-size:12px; padding:3px 10px;">＋ 新增組別</button>
   </div>
   <table id="group-table">
     <thead>
@@ -136,30 +155,47 @@
   </table>
 </div>
 
+<!-- Password modal -->
+<div class="modal-overlay" id="pw-modal">
+  <div class="modal">
+    <h3>🔐 編輯模式</h3>
+    <p>輸入密碼以解鎖編輯功能</p>
+    <label>密碼</label>
+    <input type="password" id="pw-input" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')confirmPassword()">
+    <div class="error-msg" id="pw-error"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closePwModal()">取消</button>
+      <button class="btn btn-primary" onclick="confirmPassword()">解鎖</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add badge modal -->
 <div class="modal-overlay" id="badge-modal">
   <div class="modal">
     <h3>新增成員動態</h3>
-    <label>姓名</label>
-    <input id="badge-name" placeholder="例：Kimi" />
-    <label>類型</label>
-    <select id="badge-type">
-      <option value="badge-teal">抵達（綠）</option>
-      <option value="badge-coral">返台（橘）</option>
-      <option value="badge-blue">其他（藍）</option>
-      <option value="badge-amber">注意（黃）</option>
-    </select>
-    <label>備註（選填）</label>
-    <input id="badge-note" placeholder="例：抵達、返台、1/10..." />
+    <div class="field"><label>姓名</label><input id="badge-name" placeholder="例：Kimi" /></div>
+    <div class="field"><label>類型</label>
+      <select id="badge-type">
+        <option value="badge-teal">抵達（綠）</option>
+        <option value="badge-coral">返台（橘）</option>
+        <option value="badge-blue">其他（藍）</option>
+        <option value="badge-amber">注意（黃）</option>
+      </select>
+    </div>
+    <div class="field"><label>備註（選填）</label><input id="badge-note" placeholder="例：1/10、抵達..." /></div>
     <div class="modal-footer">
-      <button class="btn" onclick="closeModal()">取消</button>
+      <button class="btn" onclick="closeBadgeModal()">取消</button>
       <button class="btn btn-primary" onclick="confirmBadge()">新增</button>
     </div>
   </div>
 </div>
 
+<script src="config.js"></script>
 <script>
 const BADGE_COLORS = ['badge-teal','badge-blue','badge-green','badge-coral','badge-amber'];
+let isEditMode = false;
+let currentBadgeTarget = null;
 
 let scheduleData = [
   { day: 'Day 0', date: '1/6', location: '東京 → 苗場', badges: [{color:'badge-teal',name:'Kimi',note:'抵達'},{color:'badge-teal',name:'藍',note:'抵達'}], ab: '—', c: '—' },
@@ -174,7 +210,69 @@ let groupData = [
   { label: 'C 組', color: 'badge-green', members: ['Steven','捷'], sport: 'Snowboard（SB）' },
 ];
 
-let currentBadgeTarget = null;
+function setEditMode(val) {
+  isEditMode = val;
+  document.body.classList.toggle('edit-mode', val);
+  const lockBtn = document.getElementById('lock-btn');
+  const hint = document.getElementById('edit-hint');
+  const addRowBtn = document.getElementById('add-row-btn');
+  const addGroupBtn = document.getElementById('add-group-btn');
+  if (val) {
+    lockBtn.textContent = '✏️ 編輯中';
+    lockBtn.className = 'lock-badge unlocked';
+    lockBtn.title = '點擊鎖定';
+    hint.textContent = '點擊格子即可編輯';
+    addRowBtn.disabled = false;
+    addGroupBtn.disabled = false;
+  } else {
+    lockBtn.textContent = '🔒 瀏覽模式';
+    lockBtn.className = 'lock-badge locked';
+    lockBtn.title = '點擊輸入密碼以啟用編輯';
+    hint.textContent = '🔒 請解鎖以編輯';
+    addRowBtn.disabled = true;
+    addGroupBtn.disabled = true;
+  }
+  // toggle editability
+  document.querySelectorAll('.editable').forEach(el => {
+    if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
+      el.readOnly = !val;
+    }
+  });
+}
+
+function handleLockClick() {
+  if (isEditMode) { setEditMode(false); }
+  else { openPwModal(); }
+}
+
+function openPwModal() {
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-error').textContent = '';
+  document.getElementById('pw-modal').classList.add('open');
+  setTimeout(() => document.getElementById('pw-input').focus(), 50);
+}
+
+function closePwModal() {
+  document.getElementById('pw-modal').classList.remove('open');
+}
+
+function confirmPassword() {
+  const val = document.getElementById('pw-input').value;
+  if (val === EDIT_PASSWORD) {
+    closePwModal();
+    setEditMode(true);
+  } else {
+    document.getElementById('pw-error').textContent = '密碼錯誤，請再試一次';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+
+document.getElementById('pw-modal').addEventListener('click', function(e) {
+  if (e.target === this) closePwModal();
+});
+
+// ── Schedule ──────────────────────────────────
 
 function renderSchedule() {
   const tbody = document.getElementById('schedule-body');
@@ -183,16 +281,16 @@ function renderSchedule() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="cell-date">
-        <input class="editable" style="font-weight:500;width:56px" value="${row.day}" onchange="scheduleData[${ri}].day=this.value">
-        ${row.date ? `<div class="sub"><input class="editable" style="width:40px;font-size:12px;color:var(--muted)" value="${row.date}" onchange="scheduleData[${ri}].date=this.value"></div>` : ''}
+        <input class="editable" style="font-weight:500;width:56px" value="${row.day}" onchange="scheduleData[${ri}].day=this.value" readonly>
+        <div class="sub"><input class="editable" style="width:40px;font-size:12px;color:var(--muted)" value="${row.date}" placeholder="日期" onchange="scheduleData[${ri}].date=this.value" readonly></div>
       </td>
-      <td><textarea class="editable" rows="2" onchange="scheduleData[${ri}].location=this.value">${row.location}</textarea></td>
+      <td><textarea class="editable" rows="2" onchange="scheduleData[${ri}].location=this.value" readonly>${row.location}</textarea></td>
       <td>
         <div class="badge-row" id="badges-${ri}"></div>
         <span class="add-badge" onclick="openBadgeModal(${ri})">＋</span>
       </td>
-      <td><textarea class="editable" rows="2" onchange="scheduleData[${ri}].ab=this.value">${row.ab}</textarea></td>
-      <td><textarea class="editable" rows="2" onchange="scheduleData[${ri}].c=this.value">${row.c}</textarea></td>
+      <td><textarea class="editable" rows="2" onchange="scheduleData[${ri}].ab=this.value" readonly>${row.ab}</textarea></td>
+      <td><textarea class="editable" rows="2" onchange="scheduleData[${ri}].c=this.value" readonly>${row.c}</textarea></td>
       <td class="actions-cell">
         <div class="row-actions">
           <button class="row-btn del" onclick="deleteRow(${ri})">刪除</button>
@@ -212,12 +310,16 @@ function renderBadges(ri) {
     const span = document.createElement('span');
     span.className = `badge ${b.color}`;
     span.innerHTML = `
-      ${b.note ? `<input value="${b.note}" size="${b.note.length||2}" onchange="scheduleData[${ri}].badges[${bi}].note=this.value" style="max-width:36px">` : ''}
-      <input value="${b.name}" size="${b.name.length||4}" onchange="scheduleData[${ri}].badges[${bi}].name=this.value">
+      ${b.note ? `<input value="${b.note}" size="${b.note.length||2}" onchange="scheduleData[${ri}].badges[${bi}].note=this.value" style="max-width:36px" readonly>` : ''}
+      <input value="${b.name}" size="${b.name.length||4}" onchange="scheduleData[${ri}].badges[${bi}].name=this.value" readonly>
       <span class="badge-del" onclick="deleteBadge(${ri},${bi})">×</span>
     `;
     container.appendChild(span);
   });
+  // sync readonly state
+  if (isEditMode) {
+    container.querySelectorAll('input').forEach(i => i.readOnly = false);
+  }
 }
 
 function deleteBadge(ri, bi) {
@@ -226,6 +328,7 @@ function deleteBadge(ri, bi) {
 }
 
 function openBadgeModal(ri) {
+  if (!isEditMode) return;
   currentBadgeTarget = ri;
   document.getElementById('badge-name').value = '';
   document.getElementById('badge-note').value = '';
@@ -233,7 +336,7 @@ function openBadgeModal(ri) {
   setTimeout(() => document.getElementById('badge-name').focus(), 50);
 }
 
-function closeModal() {
+function closeBadgeModal() {
   document.getElementById('badge-modal').classList.remove('open');
   currentBadgeTarget = null;
 }
@@ -245,18 +348,30 @@ function confirmBadge() {
   const note = document.getElementById('badge-note').value.trim();
   scheduleData[currentBadgeTarget].badges.push({ color, name, note });
   renderBadges(currentBadgeTarget);
-  closeModal();
+  // unlock newly added inputs
+  const container = document.getElementById(`badges-${currentBadgeTarget}`);
+  if (container) container.querySelectorAll('input').forEach(i => i.readOnly = false);
+  closeBadgeModal();
 }
 
+document.getElementById('badge-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeBadgeModal();
+});
+
 function addRow() {
+  if (!isEditMode) return;
   scheduleData.push({ day: `Day ${scheduleData.length}`, date: '', location: '', badges: [], ab: '', c: '' });
   renderSchedule();
+  setEditMode(true);
 }
 
 function deleteRow(ri) {
   scheduleData.splice(ri, 1);
   renderSchedule();
+  setEditMode(true);
 }
+
+// ── Groups ────────────────────────────────────
 
 function renderGroups() {
   const tbody = document.getElementById('group-body');
@@ -264,12 +379,12 @@ function renderGroups() {
   groupData.forEach((g, gi) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><span class="badge ${g.color}"><input value="${g.label}" size="${g.label.length||4}" onchange="groupData[${gi}].label=this.value"></span></td>
+      <td><span class="badge ${g.color}"><input value="${g.label}" size="${g.label.length||4}" onchange="groupData[${gi}].label=this.value" readonly></span></td>
       <td>
         <div class="chip-wrap" id="chips-${gi}"></div>
         <span class="add-badge" onclick="addMember(${gi})">＋ 成員</span>
       </td>
-      <td><input class="editable" value="${g.sport}" onchange="groupData[${gi}].sport=this.value"></td>
+      <td><input class="editable" value="${g.sport}" onchange="groupData[${gi}].sport=this.value" readonly></td>
       <td class="actions-cell">
         <div class="row-actions">
           <button class="row-btn del" onclick="deleteGroup(${gi})">刪除</button>
@@ -288,15 +403,21 @@ function renderChips(gi) {
   groupData[gi].members.forEach((m, mi) => {
     const span = document.createElement('span');
     span.className = 'chip';
-    span.innerHTML = `<input value="${m}" size="${m.length||4}" onchange="groupData[${gi}].members[${mi}]=this.value">
+    span.innerHTML = `<input value="${m}" size="${m.length||4}" onchange="groupData[${gi}].members[${mi}]=this.value" readonly>
       <span class="badge-del" onclick="deleteMember(${gi},${mi})">×</span>`;
     container.appendChild(span);
   });
+  if (isEditMode) {
+    container.querySelectorAll('input').forEach(i => i.readOnly = false);
+  }
 }
 
 function addMember(gi) {
+  if (!isEditMode) return;
   groupData[gi].members.push('新成員');
   renderChips(gi);
+  const container = document.getElementById(`chips-${gi}`);
+  if (container) container.querySelectorAll('input').forEach(i => i.readOnly = false);
 }
 
 function deleteMember(gi, mi) {
@@ -305,17 +426,26 @@ function deleteMember(gi, mi) {
 }
 
 function addGroup() {
-  const colors = BADGE_COLORS;
-  groupData.push({ label: '新組別', color: colors[groupData.length % colors.length], members: [], sport: '' });
+  if (!isEditMode) return;
+  groupData.push({ label: '新組別', color: BADGE_COLORS[groupData.length % BADGE_COLORS.length], members: [], sport: '' });
   renderGroups();
+  setEditMode(true);
 }
 
 function deleteGroup(gi) {
   groupData.splice(gi, 1);
   renderGroups();
+  setEditMode(true);
 }
 
+// ── Export ────────────────────────────────────
+
 function exportHTML() {
+  // Sync all textarea/input values back before export
+  document.querySelectorAll('.editable').forEach(el => {
+    const ev = new Event('change');
+    el.dispatchEvent(ev);
+  });
   const html = document.documentElement.outerHTML;
   const blob = new Blob([html], { type: 'text/html' });
   const a = document.createElement('a');
@@ -324,12 +454,10 @@ function exportHTML() {
   a.click();
 }
 
-document.getElementById('badge-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
-
+// ── Init ──────────────────────────────────────
 renderSchedule();
 renderGroups();
+setEditMode(false);
 </script>
 </body>
 </html>
