@@ -46,6 +46,29 @@
   .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
   .card-header { padding: 12px 16px; background: var(--surface2); border-bottom: 0.5px solid var(--border); font-size: 13px; font-weight: 500; color: var(--label); display: flex; justify-content: space-between; align-items: center; }
 
+
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  @media (max-width: 768px) {
+    body {
+      padding: 16px 12px;
+    }
+
+    th,
+    td {
+      padding: 8px;
+    }
+
+    .page-title {
+      font-size: 18px;
+      flex-wrap: wrap;
+    }
+  }
+
   /* Table */
   table { width: 100%; border-collapse: collapse; }
   th { background: var(--surface2); color: var(--label); font-weight: 500; font-size: 12px; padding: 10px 14px; text-align: left; border-bottom: 0.5px solid var(--border); }
@@ -130,7 +153,8 @@
     行程總覽
     <span id="edit-hint" style="font-weight:400; color: var(--muted)">🔒 請解鎖以編輯</span>
   </div>
-  <table id="schedule-table">
+  <div class="table-responsive">
+  <table id="schedule-table" style="min-width: 1020px;">
     <thead>
       <tr>
         <th style="width:80px">日期</th>
@@ -144,6 +168,7 @@
     </thead>
     <tbody id="schedule-body"></tbody>
   </table>
+  </div>
 </div>
 
 <div class="card">
@@ -151,7 +176,8 @@
     滑雪分組
     <button class="btn" id="add-group-btn" onclick="addGroup()" disabled style="font-size:12px; padding:3px 10px;">＋ 新增組別</button>
   </div>
-  <table id="group-table">
+  <div class="table-responsive">
+  <table id="group-table" style="min-width: 500px;">
     <thead>
       <tr>
         <th style="width:90px">組別</th>
@@ -162,6 +188,7 @@
     </thead>
     <tbody id="group-body"></tbody>
   </table>
+  </div>
 </div>
 
 <!-- Password modal -->
@@ -243,7 +270,7 @@ function setEditMode(val) {
     addGroupBtn.disabled = true;
   }
   // toggle editability
-  document.querySelectorAll('.editable').forEach(el => {
+  document.querySelectorAll('.editable, .badge input, .chip input').forEach(el => {
     if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
       el.readOnly = !val;
     }
@@ -392,6 +419,16 @@ function deleteRow(ri) {
   setEditMode(true);
 }
 
+// 切換組別顏色
+function cycleGroupColor(gi) {
+  if (!isEditMode) return;
+  const current = groupData[gi].color;
+  const idx = BADGE_COLORS.indexOf(current);
+  groupData[gi].color = BADGE_COLORS[(idx + 1) % BADGE_COLORS.length];
+  renderGroups();
+  setEditMode(true);
+}
+
 // ── Groups ────────────────────────────────────
 
 function renderGroups() {
@@ -400,7 +437,7 @@ function renderGroups() {
   groupData.forEach((g, gi) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><span class="badge ${g.color}"><input value="${g.label}" size="${getInputSize(g.label)}" oninput="this.size=getInputSize(this.value)" onchange="groupData[${gi}].label=this.value" readonly></span></td>
+      <td><span class="badge ${g.color}" style="${isEditMode ? 'cursor:pointer;' : ''}" onclick="cycleGroupColor(${gi})" title="${isEditMode ? '點擊切換顏色' : ''}"><input value="${g.label}" size="${getInputSize(g.label)}" oninput="this.size=getInputSize(this.value)" onchange="groupData[${gi}].label=this.value" onclick="event.stopPropagation()" readonly></span></td>
       <td>
         <div class="chip-wrap" id="chips-${gi}"></div>
         <span class="add-badge" onclick="addMember(${gi})">＋ 成員</span>
