@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>苗場滑雪行程</title>
+<style>
+  :root {
+    --bg: #f5f4f0; --surface: #fff; --surface2: #f1efe8;
+    --border: #d3d1c7; --border2: #e8e7e2;
+    --text: #1a1a1a; --muted: #888780; --label: #5f5e5a;
+    --teal-bg: #e1f5ee; --teal-text: #085041;
+    --blue-bg: #e6f1fb; --blue-text: #0c447c;
+    --green-bg: #eaf3de; --green-text: #27500a;
+    --coral-bg: #faece7; --coral-text: #712b13;
+    --amber-bg: #faeeda; --amber-text: #633806;
+    --red-bg: #fcebeb; --red-text: #791f1f;
+    --focus: #378add;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; font-size: 14px; color: var(--text); background: var(--bg); padding: 32px 24px; }
+
+  .page-title { font-size: 20px; font-weight: 500; margin-bottom: 24px; }
+
+  /* Toolbar */
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .btn { font-size: 13px; padding: 6px 14px; border-radius: 8px; border: 0.5px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { background: var(--surface2); }
+  .btn-primary { background: var(--text); color: var(--surface); border-color: var(--text); }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-danger { color: var(--red-text); border-color: var(--red-bg); }
+  .btn-danger:hover { background: var(--red-bg); }
+
+  /* Card */
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+  .card-header { padding: 12px 16px; background: var(--surface2); border-bottom: 0.5px solid var(--border); font-size: 13px; font-weight: 500; color: var(--label); display: flex; justify-content: space-between; align-items: center; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; }
+  th { background: var(--surface2); color: var(--label); font-weight: 500; font-size: 12px; padding: 10px 14px; text-align: left; border-bottom: 0.5px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 0.5px solid var(--border2); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+
+  /* Editable cells */
+  .editable { border: none; background: transparent; color: var(--text); font-size: 14px; font-family: inherit; width: 100%; resize: none; outline: none; line-height: 1.6; min-height: 1.6em; cursor: text; }
+  .editable:focus { background: var(--blue-bg); border-radius: 4px; padding: 2px 4px; margin: -2px -4px; }
+  .cell-date input.editable { font-weight: 500; width: 48px; }
+  .cell-date .sub { font-size: 12px; color: var(--muted); }
+
+  /* Badges */
+  .badge-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 6px; }
+  .badge-teal  { background: var(--teal-bg);  color: var(--teal-text); }
+  .badge-blue  { background: var(--blue-bg);  color: var(--blue-text); }
+  .badge-green { background: var(--green-bg); color: var(--green-text); }
+  .badge-coral { background: var(--coral-bg); color: var(--coral-text); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber-text); }
+  .badge input { border: none; background: transparent; color: inherit; font-size: 11px; font-weight: 500; font-family: inherit; outline: none; width: auto; min-width: 20px; }
+  .badge-del { cursor: pointer; opacity: 0.5; font-size: 13px; line-height: 1; }
+  .badge-del:hover { opacity: 1; }
+  .add-badge { font-size: 11px; color: var(--muted); cursor: pointer; padding: 2px 6px; border: 0.5px dashed var(--border); border-radius: 6px; }
+  .add-badge:hover { color: var(--text); border-color: var(--text); }
+
+  /* Row controls */
+  .row-actions { display: none; gap: 4px; }
+  tr:hover .row-actions { display: flex; }
+  .row-btn { font-size: 11px; padding: 2px 8px; border-radius: 6px; border: 0.5px solid var(--border); background: var(--surface); cursor: pointer; color: var(--muted); white-space: nowrap; }
+  .row-btn:hover { background: var(--surface2); color: var(--text); }
+  .row-btn.del:hover { background: var(--red-bg); color: var(--red-text); border-color: var(--red-bg); }
+
+  .actions-cell { width: 90px; text-align: right; }
+
+  /* Member chips */
+  .chip-wrap { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 3px 8px; border-radius: 20px; background: var(--surface2); border: 0.5px solid var(--border); color: var(--text); }
+  .chip input { border: none; background: transparent; color: inherit; font-size: 12px; font-family: inherit; outline: none; min-width: 28px; width: auto; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: 12px; border: 0.5px solid var(--border); padding: 24px; width: 360px; max-width: 90vw; }
+  .modal h3 { font-size: 15px; font-weight: 500; margin-bottom: 16px; }
+  .modal label { font-size: 12px; color: var(--label); display: block; margin-bottom: 4px; margin-top: 12px; }
+  .modal input, .modal select { width: 100%; font-size: 14px; padding: 7px 10px; border: 0.5px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-family: inherit; outline: none; }
+  .modal input:focus, .modal select:focus { border-color: var(--focus); }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+  @media print { .toolbar, .row-actions, .add-badge, .badge-del, .actions-cell { display: none !important; } }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">🎿 苗場滑雪行程</h1>
+
+<div class="toolbar">
+  <button class="btn btn-primary" onclick="addRow()">＋ 新增一天</button>
+  <button class="btn" onclick="window.print()">🖨 列印</button>
+  <button class="btn" onclick="exportHTML()">⬇ 匯出 HTML</button>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    行程總覽
+    <span style="font-weight:400; color: var(--muted)">點擊任意格子即可編輯</span>
+  </div>
+  <table id="schedule-table">
+    <thead>
+      <tr>
+        <th style="width:80px">日期</th>
+        <th style="width:110px">地點</th>
+        <th style="width:160px">成員動態</th>
+        <th>A / B 組活動</th>
+        <th>C 組活動</th>
+        <th style="width:90px"></th>
+      </tr>
+    </thead>
+    <tbody id="schedule-body"></tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    滑雪分組
+    <button class="btn" onclick="addGroup()" style="font-size:12px; padding:3px 10px;">＋ 新增組別</button>
+  </div>
+  <table id="group-table">
+    <thead>
+      <tr>
+        <th style="width:90px">組別</th>
+        <th>成員</th>
+        <th style="width:120px">項目</th>
+        <th style="width:60px"></th>
+      </tr>
+    </thead>
+    <tbody id="group-body"></tbody>
+  </table>
+</div>
+
+<!-- Add badge modal -->
+<div class="modal-overlay" id="badge-modal">
+  <div class="modal">
+    <h3>新增成員動態</h3>
+    <label>姓名</label>
+    <input id="badge-name" placeholder="例：Kimi" />
+    <label>類型</label>
+    <select id="badge-type">
+      <option value="badge-teal">抵達（綠）</option>
+      <option value="badge-coral">返台（橘）</option>
+      <option value="badge-blue">其他（藍）</option>
+      <option value="badge-amber">注意（黃）</option>
+    </select>
+    <label>備註（選填）</label>
+    <input id="badge-note" placeholder="例：抵達、返台、1/10..." />
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="confirmBadge()">新增</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BADGE_COLORS = ['badge-teal','badge-blue','badge-green','badge-coral','badge-amber'];
+
+let scheduleData = [
+  { day: 'Day 0', date: '1/6', location: '東京 → 苗場', badges: [{color:'badge-teal',name:'Kimi',note:'抵達'},{color:'badge-teal',name:'藍',note:'抵達'}], ab: '—', c: '—' },
+  { day: 'Day 1', date: '1/7', location: '苗場王子\n大飯店', badges: [{color:'badge-teal',name:'Yiru',note:'抵達'},{color:'badge-teal',name:'潔',note:'抵達'}], ab: '自由活動', c: 'SB 課程\n上午 2h＋下午 2h' },
+  { day: 'Day 2', date: '1/8', location: '苗場王子\n大飯店', badges: [], ab: 'Ski 課程\n上午 2h＋下午 2h', c: 'SB 課程\n上午 2h＋下午 2h' },
+  { day: 'Day 3', date: '', location: '苗場 → 東京', badges: [{color:'badge-blue',name:'全員返回東京',note:''}], ab: '—', c: '—' },
+  { day: 'Day 4+', date: '', location: '東京 → 台灣', badges: [{color:'badge-coral',name:'Kimi・藍',note:'1/10'},{color:'badge-coral',name:'Yiru・潔',note:'1/11'}], ab: '—', c: '—' },
+];
+
+let groupData = [
+  { label: 'A / B 組', color: 'badge-blue', members: ['Kimi','Reiyi','Yiru','藍','跳','潔','介','茉'], sport: 'Ski' },
+  { label: 'C 組', color: 'badge-green', members: ['Steven','捷'], sport: 'Snowboard（SB）' },
+];
+
+let currentBadgeTarget = null;
+
+function renderSchedule() {
+  const tbody = document.getElementById('schedule-body');
+  tbody.innerHTML = '';
+  scheduleData.forEach((row, ri) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="cell-date">
+        <input class="editable" style="font-weight:500;width:56px" value="${row.day}" onchange="scheduleData[${ri}].day=this.value">
+        ${row.date ? `<div class="sub"><input class="editable" style="width:40px;font-size:12px;color:var(--muted)" value="${row.date}" onchange="scheduleData[${ri}].date=this.value"></div>` : ''}
+      </td>
+      <td><textarea class="editable" rows="2" onchange="scheduleData[${ri}].location=this.value">${row.location}</textarea></td>
+      <td>
+        <div class="badge-row" id="badges-${ri}"></div>
+        <span class="add-badge" onclick="openBadgeModal(${ri})">＋</span>
+      </td>
+      <td><textarea class="editable" rows="2" onchange="scheduleData[${ri}].ab=this.value">${row.ab}</textarea></td>
+      <td><textarea class="editable" rows="2" onchange="scheduleData[${ri}].c=this.value">${row.c}</textarea></td>
+      <td class="actions-cell">
+        <div class="row-actions">
+          <button class="row-btn del" onclick="deleteRow(${ri})">刪除</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+    renderBadges(ri);
+  });
+}
+
+function renderBadges(ri) {
+  const container = document.getElementById(`badges-${ri}`);
+  if (!container) return;
+  container.innerHTML = '';
+  scheduleData[ri].badges.forEach((b, bi) => {
+    const span = document.createElement('span');
+    span.className = `badge ${b.color}`;
+    span.innerHTML = `
+      ${b.note ? `<input value="${b.note}" size="${b.note.length||2}" onchange="scheduleData[${ri}].badges[${bi}].note=this.value" style="max-width:36px">` : ''}
+      <input value="${b.name}" size="${b.name.length||4}" onchange="scheduleData[${ri}].badges[${bi}].name=this.value">
+      <span class="badge-del" onclick="deleteBadge(${ri},${bi})">×</span>
+    `;
+    container.appendChild(span);
+  });
+}
+
+function deleteBadge(ri, bi) {
+  scheduleData[ri].badges.splice(bi, 1);
+  renderBadges(ri);
+}
+
+function openBadgeModal(ri) {
+  currentBadgeTarget = ri;
+  document.getElementById('badge-name').value = '';
+  document.getElementById('badge-note').value = '';
+  document.getElementById('badge-modal').classList.add('open');
+  setTimeout(() => document.getElementById('badge-name').focus(), 50);
+}
+
+function closeModal() {
+  document.getElementById('badge-modal').classList.remove('open');
+  currentBadgeTarget = null;
+}
+
+function confirmBadge() {
+  if (currentBadgeTarget === null) return;
+  const name = document.getElementById('badge-name').value.trim() || '新成員';
+  const color = document.getElementById('badge-type').value;
+  const note = document.getElementById('badge-note').value.trim();
+  scheduleData[currentBadgeTarget].badges.push({ color, name, note });
+  renderBadges(currentBadgeTarget);
+  closeModal();
+}
+
+function addRow() {
+  scheduleData.push({ day: `Day ${scheduleData.length}`, date: '', location: '', badges: [], ab: '', c: '' });
+  renderSchedule();
+}
+
+function deleteRow(ri) {
+  scheduleData.splice(ri, 1);
+  renderSchedule();
+}
+
+function renderGroups() {
+  const tbody = document.getElementById('group-body');
+  tbody.innerHTML = '';
+  groupData.forEach((g, gi) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="badge ${g.color}"><input value="${g.label}" size="${g.label.length||4}" onchange="groupData[${gi}].label=this.value"></span></td>
+      <td>
+        <div class="chip-wrap" id="chips-${gi}"></div>
+        <span class="add-badge" onclick="addMember(${gi})">＋ 成員</span>
+      </td>
+      <td><input class="editable" value="${g.sport}" onchange="groupData[${gi}].sport=this.value"></td>
+      <td class="actions-cell">
+        <div class="row-actions">
+          <button class="row-btn del" onclick="deleteGroup(${gi})">刪除</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+    renderChips(gi);
+  });
+}
+
+function renderChips(gi) {
+  const container = document.getElementById(`chips-${gi}`);
+  if (!container) return;
+  container.innerHTML = '';
+  groupData[gi].members.forEach((m, mi) => {
+    const span = document.createElement('span');
+    span.className = 'chip';
+    span.innerHTML = `<input value="${m}" size="${m.length||4}" onchange="groupData[${gi}].members[${mi}]=this.value">
+      <span class="badge-del" onclick="deleteMember(${gi},${mi})">×</span>`;
+    container.appendChild(span);
+  });
+}
+
+function addMember(gi) {
+  groupData[gi].members.push('新成員');
+  renderChips(gi);
+}
+
+function deleteMember(gi, mi) {
+  groupData[gi].members.splice(mi, 1);
+  renderChips(gi);
+}
+
+function addGroup() {
+  const colors = BADGE_COLORS;
+  groupData.push({ label: '新組別', color: colors[groupData.length % colors.length], members: [], sport: '' });
+  renderGroups();
+}
+
+function deleteGroup(gi) {
+  groupData.splice(gi, 1);
+  renderGroups();
+}
+
+function exportHTML() {
+  const html = document.documentElement.outerHTML;
+  const blob = new Blob([html], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ski_trip.html';
+  a.click();
+}
+
+document.getElementById('badge-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+renderSchedule();
+renderGroups();
+</script>
+</body>
+</html>
