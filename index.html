@@ -141,11 +141,11 @@
 <div class="toolbar">
   <button class="btn btn-primary" id="add-row-btn" onclick="addRow()" disabled>＋ 新增一天</button>
   <button class="btn" onclick="window.print()">🖨 列印</button>
-  <button class="btn" onclick="exportHTML()">⬇ 匯出 HTML</button>
+  <button class="btn" id="save-btn" onclick="saveData()">☁️ 儲存至雲端</button>
 </div>
 
 <div class="usage-hint">
-  💡 <span><strong>使用方式：</strong>點擊上方「🔒 瀏覽模式」輸入密碼解鎖後，即可點擊表格修改內容。修改完成後，請務必點擊「⬇ 匯出 HTML」下載新檔案，以儲存您的變更！</span>
+  💡 <span><strong>使用方式：</strong>點擊上方「🔒 瀏覽模式」輸入密碼解鎖後，即可點擊表格修改內容。修改完成後，請務必點擊「☁️ 儲存至雲端」以儲存您的變更！</span>
 </div>
 
 <div class="card">
@@ -228,8 +228,8 @@
 </div>
 
 <script src="config.js"></script>
-<script id="app-data">
-let scheduleData = [
+<script>
+var scheduleData = [
   { day: 'Day 0', date: '1/6', location: '東京 → 苗場', badges: [{color:'badge-teal',name:'Kimi',note:'抵達'},{color:'badge-teal',name:'藍',note:'抵達'}], ab: '—', c: '—', personal: '—' },
   { day: 'Day 1', date: '1/7', location: '苗場', badges: [{color:'badge-teal',name:'Yiru',note:'抵達'},{color:'badge-teal',name:'潔',note:'抵達'}], ab: '自由活動', c: 'SB 課程\n上午 2h＋下午 2h', personal: '—' },
   { day: 'Day 2', date: '1/8', location: '苗場', badges: [], ab: 'Ski 課程\n上午 2h＋下午 2h', c: 'SB 課程\n上午 2h＋下午 2h', personal: '—' },
@@ -237,7 +237,7 @@ let scheduleData = [
   { day: 'Day 4+', date: '', location: '東京 → 台灣', badges: [{color:'badge-coral',name:'Kimi・藍',note:'1/10'},{color:'badge-coral',name:'Yiru・潔',note:'1/11'}], ab: '—', c: '—', personal: '—' },
 ];
 
-let groupData = [
+var groupData = [
   { label: 'A / B 組', color: 'badge-blue', members: ['Kimi','Reiyi','Yiru','藍','跳','潔','介','茉'], sport: 'Ski' },
   { label: 'C 組', color: 'badge-green', members: ['Steven','捷'], sport: 'Snowboard（SB）' },
 ];
@@ -496,40 +496,87 @@ function deleteGroup(gi) {
   setEditMode(true);
 }
 
-// ── Export ────────────────────────────────────
-
-function exportHTML() {
-  // Sync all textarea/input values back before export
-  document.querySelectorAll('.editable').forEach(el => {
-    const ev = new Event('change');
-    el.dispatchEvent(ev);
-  });
-
-  // 匯出前先切換回瀏覽模式，確保版面乾淨
-  const wasEdit = isEditMode;
-  if (wasEdit) setEditMode(false);
-
-  // 將目前的資料寫回 script 區塊中，取代掉舊的寫死資料
-  const dataScript = document.getElementById('app-data');
-  const newSchedule = JSON.stringify(scheduleData, null, 2).replace(/</g, '\\u003C');
-  const newGroup = JSON.stringify(groupData, null, 2).replace(/</g, '\\u003C');
-  dataScript.textContent = `\nlet scheduleData = ${newSchedule};\nlet groupData = ${newGroup};\n`;
-
-  const html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-  const blob = new Blob([html], { type: 'text/html' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'ski_trip.html';
-  a.click();
-
-  // 如果原本是編輯模式，則恢復編輯狀態
-  if (wasEdit) setEditMode(true);
-}
-
 // ── Init ──────────────────────────────────────
 renderSchedule();
 renderGroups();
 setEditMode(false);
+</script>
+
+<!-- Firebase Firestore 整合 -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+  // TODO: 請替換為您自己的 Firebase 專案設定
+/*   const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  }; */
+  const firebaseConfig = {
+    apiKey: "AIzaSyBqrwuK1gMZcQhUqGOzf1c_FE5O0LTnPCE",
+    authDomain: "ski-trip-a4036.firebaseapp.com",
+    projectId: "ski-trip-a4036",
+    storageBucket: "ski-trip-a4036.firebasestorage.app",
+    messagingSenderId: "764649094357",
+    appId: "1:764649094357:web:d7b51f270991d74795b65c",
+    measurementId: "G-P2NG1M2ZXV"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  // 這裡設定存取 Collection "skiTrip" 底下的 Document "2027_trip"
+  const tripDocRef = doc(db, "skiTrip", "2027_trip");
+
+  // 初始化時讀取雲端資料
+  async function loadFromCloud() {
+    try {
+      const docSnap = await getDoc(tripDocRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.schedule) window.scheduleData = data.schedule;
+        if (data.groups) window.groupData = data.groups;
+        renderSchedule();
+        renderGroups();
+      }
+    } catch (error) {
+      console.error("載入資料失敗:", error);
+    }
+  }
+
+  // 提供給 HTML onclick 事件的全域儲存函數
+  window.saveData = async function() {
+    // 儲存前確保所有修改中文字框的值都已被同步到變數內
+    document.querySelectorAll('.editable').forEach(el => {
+      const ev = new Event('change');
+      el.dispatchEvent(ev);
+    });
+
+    const btn = document.getElementById('save-btn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '☁️ 儲存中...';
+    btn.disabled = true;
+
+    try {
+      await setDoc(tripDocRef, {
+        schedule: window.scheduleData,
+        groups: window.groupData
+      });
+      alert("✅ 儲存成功！");
+    } catch (error) {
+      console.error("儲存失敗:", error);
+      alert("❌ 儲存失敗，請檢查開發者工具錯誤或 Firestore 權限設定。");
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  };
+
+  // 網頁載入時立刻拉取資料
+  loadFromCloud();
 </script>
 </body>
 </html>
