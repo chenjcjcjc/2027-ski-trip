@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>苗場滑雪裝備檢查表</title>
+<style>
+  :root {
+    --bg: #f5f4f0; --surface: #fff; --surface2: #f1efe8;
+    --border: #d3d1c7; --border2: #e8e7e2;
+    --text: #1a1a1a; --muted: #888780; --label: #5f5e5a;
+    --teal-bg: #e1f5ee; --teal-text: #085041;
+    --blue-bg: #e6f1fb; --blue-text: #0c447c;
+    --green-bg: #eaf3de; --green-text: #27500a;
+    --coral-bg: #faece7; --coral-text: #712b13;
+    --amber-bg: #faeeda; --amber-text: #633806;
+    --red-bg: #fcebeb; --red-text: #791f1f;
+    --focus: #378add;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; font-size: 14px; color: var(--text); background: var(--bg); padding: 32px 24px; }
+
+  .page-title { font-size: 20px; font-weight: 500; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; }
+
+  /* Lock badge */
+  .lock-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 12px; border-radius: 20px; cursor: pointer; user-select: none; transition: opacity .15s; }
+  .lock-badge:hover { opacity: .75; }
+  .lock-badge.locked { background: var(--surface2); color: var(--muted); border: 0.5px solid var(--border); }
+  .lock-badge.unlocked { background: var(--green-bg); color: var(--green-text); border: 0.5px solid #c0dd97; }
+
+  /* Toolbar */
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .btn { font-size: 13px; padding: 6px 14px; border-radius: 8px; border: 0.5px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { background: var(--surface2); }
+  .btn-primary { background: var(--text); color: var(--surface); border-color: var(--text); }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-danger { color: var(--red-text); border-color: var(--red-bg); }
+  .btn-danger:hover { background: var(--red-bg); }
+  .btn:disabled { opacity: .35; cursor: not-allowed; }
+
+  /* Usage Hint */
+  .usage-hint { background: var(--blue-bg); color: var(--blue-text); padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; border: 0.5px solid #cce0ff; line-height: 1.5; }
+  .usage-hint strong { font-weight: 600; }
+
+  /* Card & Table */
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+  .card-header { padding: 12px 16px; background: var(--surface2); border-bottom: 0.5px solid var(--border); font-size: 13px; font-weight: 500; color: var(--label); display: flex; justify-content: space-between; align-items: center; }
+  .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: var(--surface2); color: var(--label); font-weight: 500; font-size: 12px; padding: 10px 14px; text-align: left; border-bottom: 0.5px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 0.5px solid var(--border2); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+
+  /* Editable cells */
+  .editable { border: none; background: transparent; color: var(--text); font-size: 14px; font-family: inherit; width: 100%; resize: none; outline: none; line-height: 1.6; }
+  .editable[readonly], .editable:disabled { cursor: default; }
+  .edit-mode .editable:not([readonly]):not(:disabled) { cursor: text; }
+  .edit-mode .editable:not([readonly]):focus { background: var(--blue-bg); border-radius: 4px; padding: 2px 4px; margin: -2px -4px; }
+
+  /* Row controls */
+  .row-actions { display: none; gap: 4px; }
+  .edit-mode tr:hover .row-actions { display: flex; }
+  .row-btn { font-size: 11px; padding: 2px 8px; border-radius: 6px; border: 0.5px solid var(--border); background: var(--surface); cursor: pointer; color: var(--muted); white-space: nowrap; }
+  .row-btn:hover { background: var(--surface2); color: var(--text); }
+  .row-btn.del:hover { background: var(--red-bg); color: var(--red-text); border-color: var(--red-bg); }
+  .actions-cell { width: 70px; text-align: right; }
+
+  /* Password modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: 12px; border: 0.5px solid var(--border); padding: 24px; width: 320px; max-width: 90vw; }
+  .modal h3 { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .modal label { font-size: 12px; color: var(--label); display: block; margin-bottom: 4px; }
+  .modal input { width: 100%; font-size: 14px; padding: 7px 10px; border: 0.5px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-family: inherit; outline: none; }
+  .modal input:focus { border-color: var(--focus); }
+  .error-msg { font-size: 12px; color: var(--red-text); margin-top: 8px; min-height: 16px; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+  @media (max-width: 768px) { body { padding: 16px 12px; } th, td { padding: 8px; } .page-title { font-size: 18px; flex-wrap: wrap; } }
+  @media print { .toolbar, .row-actions, .actions-cell, .lock-badge, .usage-hint { display: none !important; } }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">
+  🎒 苗場滑雪裝備檢查表
+  <span class="lock-badge locked" id="lock-btn" onclick="handleLockClick()" title="點擊輸入密碼以啟用編輯">🔒 瀏覽模式</span>
+</h1>
+
+<div class="toolbar">
+  <a href="index.html" class="btn" style="text-decoration: none;">⬅️ 返回行程總覽</a>
+  <button class="btn btn-primary" id="add-equip-btn" onclick="addEquipment()" disabled>＋ 新增裝備</button>
+  <button class="btn" onclick="window.print()">🖨 列印</button>
+  <button class="btn" id="save-btn" onclick="saveData()">☁️ 儲存至雲端</button>
+</div>
+
+<div class="usage-hint">
+  💡 <span><strong>使用方式：</strong>點擊上方「🔒 瀏覽模式」輸入密碼解鎖後，即可點擊表格修改內容。修改完成後，請務必點擊「☁️ 儲存至雲端」！</span>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    裝備清單
+    <span id="edit-hint" style="font-weight:400; color: var(--muted)">🔒 請解鎖以編輯</span>
+  </div>
+  <div class="table-responsive">
+  <table id="equip-table" style="min-width: 600px;">
+    <thead>
+      <tr>
+        <th style="width:120px">類別</th>
+        <th style="width:160px">裝備名稱</th>
+        <th style="width:120px">狀態</th>
+        <th>備註</th>
+        <th class="actions-cell"></th>
+      </tr>
+    </thead>
+    <tbody id="equip-body"></tbody>
+  </table>
+  </div>
+</div>
+
+<!-- Password modal -->
+<div class="modal-overlay" id="pw-modal">
+  <div class="modal">
+    <h3>🔐 編輯模式</h3>
+    <p>輸入密碼以解鎖編輯功能</p>
+    <label>密碼</label>
+    <input type="password" id="pw-input" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')confirmPassword()">
+    <div class="error-msg" id="pw-error"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closePwModal()">取消</button>
+      <button class="btn btn-primary" onclick="confirmPassword()">解鎖</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+var equipmentData = [
+  { category: '服裝', item: '滑雪外套', status: '必備', note: '防水防風' },
+  { category: '服裝', item: '雪褲', status: '必備', note: '防水防風' },
+  { category: '服裝', item: '排汗內衣褲', status: '必備', note: '底層保暖，避免穿純棉' },
+  { category: '服裝', item: '中層保暖衣', status: '必備', note: '刷毛衣或薄羽絨' },
+  { category: '服裝', item: '滑雪襪', status: '必備', note: '長襪，包覆至小腿肚' },
+  { category: '配件', item: '雪鏡 (Goggles)', status: '必備', note: '防雪盲、防風' },
+  { category: '配件', item: '滑雪手套', status: '必備', note: '防水保暖' },
+  { category: '配件', item: '脖圍 / 面罩', status: '必備', note: '防風保暖' },
+  { category: '配件', item: '毛帽', status: '建議', note: '平時保暖用' },
+  { category: '配件', item: '護具 (護膝/護臀)', status: '建議', note: '新手強烈建議' },
+  { category: '硬裝備', item: '安全帽', status: '租借/自備', note: '保護頭部安全' },
+  { category: '硬裝備', item: '雪板 (Ski/SB)', status: '租借/自備', note: '' },
+  { category: '硬裝備', item: '雪鞋 (Boots)', status: '租借/自備', note: '' },
+  { category: '硬裝備', item: '雪杖 (Poles)', status: '租借/自備', note: 'Ski 專用' },
+  { category: '其他', item: '護唇膏 / 防曬乳', status: '建議', note: '雪地反光容易曬傷' }
+];
+
+let isEditMode = false;
+
+function setEditMode(val) {
+  isEditMode = val;
+  document.body.classList.toggle('edit-mode', val);
+  const lockBtn = document.getElementById('lock-btn');
+  const hint = document.getElementById('edit-hint');
+  const addEquipBtn = document.getElementById('add-equip-btn');
+  
+  if (val) {
+    lockBtn.textContent = '✏️ 編輯中';
+    lockBtn.className = 'lock-badge unlocked';
+    hint.textContent = '點擊格子即可編輯';
+    addEquipBtn.disabled = false;
+  } else {
+    lockBtn.textContent = '🔒 瀏覽模式';
+    lockBtn.className = 'lock-badge locked';
+    hint.textContent = '🔒 請解鎖以編輯';
+    addEquipBtn.disabled = true;
+  }
+  document.querySelectorAll('.editable').forEach(el => { el.readOnly = !val; });
+}
+
+function handleLockClick() { isEditMode ? setEditMode(false) : openPwModal(); }
+function openPwModal() { document.getElementById('pw-input').value = ''; document.getElementById('pw-error').textContent = ''; document.getElementById('pw-modal').classList.add('open'); setTimeout(() => document.getElementById('pw-input').focus(), 50); }
+function closePwModal() { document.getElementById('pw-modal').classList.remove('open'); }
+function confirmPassword() { if (document.getElementById('pw-input').value === EDIT_PASSWORD) { closePwModal(); setEditMode(true); } else { document.getElementById('pw-error').textContent = '密碼錯誤，請再試一次'; document.getElementById('pw-input').value = ''; document.getElementById('pw-input').focus(); } }
+document.getElementById('pw-modal').addEventListener('click', function(e) { if (e.target === this) closePwModal(); });
+
+function renderEquipment() {
+  const tbody = document.getElementById('equip-body');
+  tbody.innerHTML = '';
+  equipmentData.forEach((eq, ei) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input class="editable" value="${eq.category}" onchange="equipmentData[${ei}].category=this.value" readonly></td>
+      <td><input class="editable" value="${eq.item}" onchange="equipmentData[${ei}].item=this.value" readonly></td>
+      <td><input class="editable" value="${eq.status}" onchange="equipmentData[${ei}].status=this.value" readonly></td>
+      <td><input class="editable" value="${eq.note}" onchange="equipmentData[${ei}].note=this.value" readonly></td>
+      <td class="actions-cell"><div class="row-actions"><button class="row-btn del" onclick="deleteEquipment(${ei})">刪除</button></div></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  if (isEditMode) document.querySelectorAll('.editable').forEach(el => el.readOnly = false);
+}
+
+function addEquipment() { if(!isEditMode) return; equipmentData.push({ category: '新類別', item: '新裝備', status: '', note: '' }); renderEquipment(); setEditMode(true); }
+function deleteEquipment(ei) { equipmentData.splice(ei, 1); renderEquipment(); setEditMode(true); }
+
+renderEquipment();
+setEditMode(false);
+</script>
+
+<!-- Firebase Firestore 整合 -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+  const firebaseConfig = { apiKey: "AIzaSyBqrwuK1gMZcQhUqGOzf1c_FE5O0LTnPCE", authDomain: "ski-trip-a4036.firebaseapp.com", projectId: "ski-trip-a4036", storageBucket: "ski-trip-a4036.firebasestorage.app", messagingSenderId: "764649094357", appId: "1:764649094357:web:d7b51f270991d74795b65c", measurementId: "G-P2NG1M2ZXV" };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const tripDocRef = doc(db, "skiTrip", "2027_trip");
+
+  async function loadFromCloud() {
+    try {
+      const docSnap = await getDoc(tripDocRef);
+      if (docSnap.exists() && docSnap.data().equipment) { window.equipmentData = docSnap.data().equipment; renderEquipment(); }
+    } catch (error) { console.error("載入資料失敗:", error); }
+  }
+
+  window.saveData = async function() {
+    document.querySelectorAll('.editable').forEach(el => el.dispatchEvent(new Event('change')));
+    const btn = document.getElementById('save-btn');
+    const originalText = btn.innerHTML; btn.innerHTML = '☁️ 儲存中...'; btn.disabled = true;
+    try {
+      await setDoc(tripDocRef, { equipment: window.equipmentData }, { merge: true });
+      alert("✅ 儲存成功！");
+    } catch (error) { console.error("儲存失敗:", error); alert("❌ 儲存失敗，請檢查權限設定。");
+    } finally { btn.innerHTML = originalText; btn.disabled = false; }
+  };
+  loadFromCloud();
+</script>
+</body>
+</html>
